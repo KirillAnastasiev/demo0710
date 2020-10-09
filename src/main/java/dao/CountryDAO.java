@@ -18,9 +18,9 @@ public class CountryDAO {
     }
 
     public List<Country> findAll() throws CantFindCountryException {
-        try {
-            List<Country> result = new ArrayList<>();
-            PreparedStatement ps = connection.prepareStatement("select * from country");
+        List<Country> result = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT * FROM country ORDER BY id;")) {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -28,10 +28,29 @@ public class CountryDAO {
                 String shortName = rs.getString("short_name");
                 result.add(new Country(id, name, shortName));
             }
+            rs.close();
             return result;
         } catch (SQLException e) {
             e.printStackTrace();
             throw new CantFindCountryException(e);
         }
+    }
+
+    public Country findById(int id) throws CantFindCountryException {
+        try (PreparedStatement ps = connection.prepareStatement(
+                "SELECT * FROM country WHERE id = ?;")) {
+            ps.setInt(1, id);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                String name = rs.getString("name");
+                String shortName = rs.getString("short_name");
+                rs.close();
+                return new Country(id, name, shortName);
+            }
+        } catch (SQLException exc) {
+            exc.printStackTrace();
+            throw new CantFindCountryException(exc);
+        }
+        return null;
     }
 }
